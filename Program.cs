@@ -1,177 +1,173 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using WebSocketSharp;
-using WebSocketSharp.Server;
-namespace WebSocket___Server
+using WebSocketSharp.Net;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Net;
+namespace WebSocket___Sharp_Practice
 {
-    public class ChatRoom : WebSocketBehavior
-    {
-        private static int usersConnected =0;
-        public ChatRoom()
-        {
-            Interlocked.Increment(ref usersConnected);
-            Console.WriteLine($"{usersConnected}");
-        }
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            Send(e.Data);
-        }
-    }
-    class Home : WebSocketBehavior
-    {
-        private bool isHost=false;
-        private int joinRoomCode=0;
-        public Home()
-        {
-        }
-        protected override void OnMessage(MessageEventArgs e)
-        {
-            //check it is host 
-            if (!bool.TryParse(Context.QueryString["host"], out isHost) || !int.TryParse(Context.QueryString["room"],out joinRoomCode))
-            {
-                //handle error
-                Console.WriteLine("No host key passed or invalid value");
-            }
-            if(isHost)
-            {
-                CreateRoom(IdGen.New());
-            }
-            else
-            {
-                JoinRoom(joinRoomCode);
-            }
-            
-        }
-        public void JoinRoom(int id)
-        {
-            if (Room.stashRoomIds.ContainsKey(joinRoomCode))
-            {
-                Console.WriteLine($"Joined Room {id}");
-                Send(Room.stashRoomIds[joinRoomCode].URL);
-            }
-            else Send("[Error] Invalid id");
-        }
-        public void CreateRoom(int id)
-        {
-            Console.WriteLine($"Created Room {id}");
-            var NewRoom = new Room(id); // problema atomic?
-            Send(NewRoom.URL);
-        }
-    }
-    public class Room
-    {
-        // folosim hash table sa stocam Roomrile
-        public static Dictionary<int, Room> stashRoomIds = new Dictionary<int, Room>();
-        public string URL;
-        public int id { set; get; }
-        // folosim aceasta variabila pt a seta indexul unui nou participant
-        private int p_Index=0;
-        // folosim hash sa stocam useri (nu folosim list pt ca atunci cand un user se deconecteaza 
-        // indexul se modifica
-        public Dictionary<int, Chat> Users = new Dictionary<int, Chat>();
-        public Room(int id)
-        {
-            this.id = id;
-            stashRoomIds.Add(id, this);
-            // adaugam un nou path cu noul room
-            WS.wssv.AddWebSocketService<Room.Chat>($"/room/{id}", () => new Chat(this)) ;
-            URL = $"ws://localhost:9000/room/{id}";
-        }
-        //cate o noua instanta a clasei se formeaza cand un user intra
-        public class Chat : WebSocketBehavior
-        {
-            private Room _room; // roomul de care apartine
-            public bool _isPresenting = false;
-            public bool _isHost { set; get; } = false;
-            public string _name { set; get; } = "No name";
-            public int _index = 0;
-            public string _prefix;
-
-            public Chat()
-            {
-            }
-
-            public Chat(Room room)
-            {
-                _room = room;
-                _index = _room.p_Index;
-                Interlocked.Increment(ref _room.p_Index);
-                if (_index == 0)
-                    _isHost = true;
-                room.Users.Add(_index,this);  /// e oare problema ca instructiunile astea nus atomic?
-                // prefixul cu care se vor trimite mesaje pe net
-                _prefix = (_isHost ? "host" : "guest");
-            }
-
-            protected override void OnClose(CloseEventArgs e)
-            {
-                Sessions.Broadcast($"DIS {_index} {_name}");
-                //stergem roomul daca ultimu e host sau daca hostu da dis.
-                if (_room.Users.Count == 1 || _index==0)
-                {
-                    Sessions.Broadcast("EXIT");
-                    WS.wssv.RemoveWebSocketService(_room.URL);
-                    _room.Users.Clear();
-                    Room.stashRoomIds.Remove(_room.id);
-                    Console.WriteLine("Removed room");
-                }
-                else
-                {
-                    _room.Users.Remove(_index);
-                    Console.WriteLine("Removed user");
-                }
-            }
-
-            protected override void OnMessage(MessageEventArgs e)
-            {
-                // primul lucru pe care il trimite clientul este un 0
-                if (e.Data == "0")
-                {
-                    Sessions.Broadcast($"CON {_index} {_name}");
-                    foreach (var x in _room.Users)
-                    {
-                        if (x.Value._index != _index)
-                            Send($"CON {x.Value._index} {x.Value._name}");
-                    }
-                }
-                else if (e.Data.Contains("SND"))
-                {
-                    string[] data = e.Data.Split();
-                    int idx = -1;
-                    int.TryParse(data[1], out idx);
-                    if (_room.Users.ContainsKey(idx))
-                    {
-                        string ans = "RCV ";
-                        for (int i = 2; i < data.Length; i++)
-                            ans += data[i] + " ";
-                        _room.Users[idx].Send(ans);
-                    }
-                }
-                else
-                    Sessions.Broadcast($"BRC {(_isHost ? "host" : $"guest{_index}")} {e.Data}");
-            }
-
-            protected override void OnOpen()
-            {
-                _name = Context.QueryString["name"];
-            }
-        }
-    }
     public static class WS
     {
-        public static WebSocketServer wssv = new WebSocketServer("ws://localhost:9000");
-    }
-
-    public class Program
-    {
-        public static void Main(string[] args)
+        private static Dictionary<int, string> localUserStash = new Dictionary<int, string>();
+        private static Thread T_InRoom = null;
+        private static bool? _isHost = null;
+        private static string _URL;
+        private static string _name;
+        public static WebSocketSharp.WebSocket ws;
+        //connect to server as host
+        public static void InitHost(string URL, string name)
         {
-            WS.wssv.AddWebSocketService<Home>("/home");
-            WS.wssv.Start();
-            Console.WriteLine("Started Server");
-            Console.ReadKey(true);
-            WS.wssv.Stop();
-        }   
+            _URL = URL;
+            _name = name;
+            _isHost = true;
+            localUserStash.Add(0, WS._name);
+            ws = new WebSocketSharp.WebSocket($"{URL}?host={_isHost}");
+            WS.WSEventSubscribtions();
+            ws.Connect();
+        }
+        //connect to server as client
+        public static void InitClient(string URL,string name, int roomCode)
+        {
+            _URL = URL;
+            _name = name;
+            Debug.Assert(roomCode != null);
+            _isHost = false;
+            ws = new WebSocketSharp.WebSocket($"{URL}?host={_isHost}&room={roomCode}");
+            WS.WSEventSubscribtions();
+            ws.Connect();
+        }
+        public static void Close()
+        {
+            while (T_InRoom == null || !T_InRoom.IsAlive) { }
+            T_InRoom.Join();
+        }
+        public static void WSEventSubscribtions()
+        {
+            Debug.Assert(_isHost != null);
+            if ((bool)_isHost)
+                ws.OnMessage += (sender, e) =>
+                {
+                    if (e.Data.Contains("ws://"))
+                    {
+                        T_InRoom = new Thread(() => Host.InRoom(e.Data + $"?name={_name}"));
+                        T_InRoom.Start();
+                        ws.Close();
+                    }
+                    else
+                        Console.WriteLine(e.Data);
+                };
+            else
+                ws.OnMessage += (sender, e) =>
+                {
+                    if (e.Data.Contains("ws://"))
+                    {
+                        T_InRoom = new Thread(() => Client.InRoom(e.Data + $"?name={_name}&room={Client.roomCode}"));
+                        T_InRoom.Start();
+                        ws.Close();
+                    }
+                    else
+                        Console.WriteLine(e.Data);
+                };
+            ws.OnOpen += (sender, e) => { Console.WriteLine("Conection established"); ws.Send("0"); };
+            ws.OnError += (sender, e) => Console.WriteLine(e.Message);
+        }
+        public static class Host
+        {
+            public static int roomCode;
+            static public WebSocket ws;
+            public static void InRoom(string URL)
+            {
+                Debug.Assert(int.TryParse(URL.Substring(URL.IndexOf("room") + 5, 7), out roomCode));
+                ws = new WebSocket(URL);
+                EventSubscribtions();
+                ws.Connect();
+                string msg = "da";
+                while (msg != "exit")
+                {
+                    msg = Console.ReadLine();
+                    ws.Send(msg);
+                }
+            }
+            public static void EventSubscribtions()
+            {
+                ws.OnOpen += (sender, e) => { Console.WriteLine($"Room {roomCode}"); };
+                ws.OnMessage += (sender, e) =>
+                {
+                    Console.WriteLine(e.Data);
+                };
+                ws.OnError += (sender, e) => Console.WriteLine(e.Message);
+            }
+        }
+        public static class Client
+        {
+            public static int roomCode;
+            public static WebSocket ws;
+            public static void InRoom(string URL)
+            {
+                ws = new WebSocket(URL);
+                Debug.Assert(int.TryParse(URL.Substring(URL.IndexOf("room") + 5, 7), out roomCode));
+                Client.ClientEnventSubscribtions();
+                ws.Connect();
+                string msg = "da";
+                while (msg != "exit")
+                {
+                    msg = Console.ReadLine();
+                    ws.Send(msg);
+                }
+            }
+            public static void ClientEnventSubscribtions()
+            {
+                ws.OnOpen += (sender, e) => {
+                    Console.WriteLine($"Room {roomCode}");
+                    ws.Send("0"); };
+                ws.OnMessage += (sender, e) =>
+                {
+                    if (e.Data == "EXIT")
+                        ws.Close();
+                    else if(e.Data.Substring(0,3)=="RCV")
+                    {
+                        Console.WriteLine(e.Data);
+                    }
+                    else if (e.Data.Substring(0,3)==("CON"))
+                    {
+                        string[] dat= e.Data.Split();
+                        localUserStash.Add(int.Parse(dat[1]),dat[2]);
+                    }
+                    else
+                    Console.WriteLine(e.Data);
+                };
+                ws.OnError += (sender, e) => Console.WriteLine(e.Message);
+            }
+        }
+    }
+    class Program
+    {
+        static void Main()
+        {
+            Console.WriteLine("Started Client");
+            int x;
+            //ReadName
+            #region Input
+            bool isHost = false;
+            int roomNumberJoin=0;
+            Console.WriteLine("Host?(y or n)");
+            string AnsIsHost = Console.ReadLine();
+            if (AnsIsHost == "y")
+                isHost = true;
+            else
+            {
+                if (!int.TryParse(Console.ReadLine(), out roomNumberJoin))
+                    Debug.Assert(false);
+            }
+            #endregion
+            if (isHost)
+                WS.InitHost("ws://localhost:9000/home", "Giorgica");
+            else
+                WS.InitClient("ws://localhost:9000/home", "MateiCorvin", roomNumberJoin);
+            WS.Close();
+        }
+
     }
 }
