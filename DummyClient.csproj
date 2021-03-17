@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="IdGen.cs" />
+    <Compile Remove="ServerProgram.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="WebSocketSharpFork" Version="1.0.4" />
   </ItemGroup>
 
