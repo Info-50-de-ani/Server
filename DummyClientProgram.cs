@@ -6,16 +6,22 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 using System.Net;
+using System.Media;
+using System.Windows;
+using System.Windows.Input;
+using System.Collections.ObjectModel;
 namespace WebSocket___Sharp_Practice
 {
     public static class WS
     {
+        public const int port = 32281;
+        public static List<string> ActivePresenters = new List<string>(4);
         private static Dictionary<int, string> localUserStash = new Dictionary<int, string>();
         private static Thread T_InRoom = null;
         private static bool? _isHost = null;
         private static string _URL;
         private static string _name;
-        public static WebSocketSharp.WebSocket ws;
+        public static WebSocketSharp.WebSocket ws; 
         //connect to server as host
         public static void InitHost(string URL, string name)
         {
@@ -147,7 +153,6 @@ namespace WebSocket___Sharp_Practice
         static void Main()
         {
             Console.WriteLine("Started Client");
-            int x;
             //ReadName
             #region Input
             bool isHost = false;
@@ -163,9 +168,9 @@ namespace WebSocket___Sharp_Practice
             }
             #endregion
             if (isHost)
-                WS.InitHost("ws://localhost:9000/home", "Giorgica");
+                WS.InitHost($"ws://localhost:{WS.port}/home", "Giorgica");
             else
-                WS.InitClient("ws://localhost:9000/home", "MateiCorvin", roomNumberJoin);
+                WS.InitClient($"ws://localhost:{WS.port}/home", "MateiCorvin", roomNumberJoin);
             WS.Close();
         }
 

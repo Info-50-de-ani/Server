@@ -76,7 +76,7 @@ namespace WebSocket___Server
             stashRoomIds.Add(id, this);
             // adaugam un nou path cu noul room
             WS.wssv.AddWebSocketService<Room.Chat>($"/room/{id}", () => new Chat(this)) ;
-            URL = $"ws://localhost:9000/room/{id}";
+            URL = $"ws://localhost:{WS.port}/room/{id}";
         }
         //cate o noua instanta a clasei se formeaza cand un user intra
         public class Chat : WebSocketBehavior
@@ -128,12 +128,12 @@ namespace WebSocket___Server
                 // primul lucru pe care il trimite clientul este un 0
                 if (e.Data == "0")
                 {
-                    Sessions.Broadcast($"CON {_index} {_name}");
-                    foreach (var x in _room.Users)
-                    {
-                        if (x.Value._index != _index)
-                            Send($"CON {x.Value._index} {x.Value._name}");
-                    }
+                     Sessions.Broadcast($"CON {_index} {_name}");
+                     foreach (var x in _room.Users)
+                     {
+                         if (x.Value._index != _index)
+                             Send($"CON {x.Value._index} {x.Value._name}");
+                     }
                 }
                 else if (e.Data.Contains("SND"))
                 {
@@ -155,12 +155,19 @@ namespace WebSocket___Server
             protected override void OnOpen()
             {
                 _name = Context.QueryString["name"];
+//                 Sessions.Broadcast($"CON {_index} {_name}");
+//                 foreach (var x in _room.Users)
+//                 {
+//                     if (x.Value._index != _index)
+//                         Send($"CON {x.Value._index} {x.Value._name}");
+//                 }
             }
         }
     }
     public static class WS
     {
-        public static WebSocketServer wssv = new WebSocketServer("ws://localhost:9000");
+        public const int port = 32281;
+        public static WebSocketServer wssv = new WebSocketServer($"ws://localhost:{WS.port}");
     }
 
     public class Program
