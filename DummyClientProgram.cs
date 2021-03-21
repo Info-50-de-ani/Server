@@ -23,13 +23,13 @@ namespace WebSocket___Sharp_Practice
         private static string _name;
         public static WebSocketSharp.WebSocket ws; 
         //connect to server as host
-        public static void InitHost(string URL, string name)
+        public static void InitHost(string URL, string name,int token)
         {
             _URL = URL;
             _name = name;
             _isHost = true;
             localUserStash.Add(0, WS._name);
-            ws = new WebSocketSharp.WebSocket($"{URL}?host={_isHost}");
+            ws = new WebSocketSharp.WebSocket($"{URL}?token={token}");
             WS.WSEventSubscribtions();
             ws.Connect();
         }
@@ -55,14 +55,11 @@ namespace WebSocket___Sharp_Practice
             if ((bool)_isHost)
                 ws.OnMessage += (sender, e) =>
                 {
-                    if (e.Data.Contains("ws://"))
-                    {
-                        T_InRoom = new Thread(() => Host.InRoom(e.Data + $"?name={_name}"));
-                        T_InRoom.Start();
-                        ws.Close();
-                    }
-                    else
-                        Console.WriteLine(e.Data);
+                    
+                    T_InRoom = new Thread(() => Host.InRoom(e.Data + $"?name={_name}"));
+                    T_InRoom.Start();
+                    ws.Close();
+
                 };
             else
                 ws.OnMessage += (sender, e) =>
@@ -76,7 +73,7 @@ namespace WebSocket___Sharp_Practice
                     else
                         Console.WriteLine(e.Data);
                 };
-            ws.OnOpen += (sender, e) => { Console.WriteLine("Conection established"); ws.Send("0"); };
+            ws.OnOpen += (sender, e) => { Console.WriteLine("Conection established"); };
             ws.OnError += (sender, e) => Console.WriteLine(e.Message);
         }
         public static class Host
@@ -125,14 +122,13 @@ namespace WebSocket___Sharp_Practice
             }
             public static void ClientEnventSubscribtions()
             {
-                ws.OnOpen += (sender, e) => {
+                ws.OnOpen += (sender, e) =>
+                {
                     Console.WriteLine($"Room {roomCode}");
-                    ws.Send("0"); };
+                };
                 ws.OnMessage += (sender, e) =>
                 {
-                    if (e.Data == "EXIT")
-                        ws.Close();
-                    else if(e.Data.Substring(0,3)=="RCV")
+                    if(e.Data.Substring(0,3)=="RCV")
                     {
                         Console.WriteLine(e.Data);
                     }
@@ -153,7 +149,6 @@ namespace WebSocket___Sharp_Practice
         static void Main()
         {
             Console.WriteLine("Started Client");
-            //ReadName
             #region Input
             bool isHost = false;
             int roomNumberJoin=0;
@@ -167,11 +162,16 @@ namespace WebSocket___Sharp_Practice
                     Debug.Assert(false);
             }
             #endregion
+            int token = 12345;
             if (isHost)
-                WS.InitHost($"ws://localhost:{WS.port}/home", "Giorgica");
+                WS.InitHost($"ws://localhost:{WS.port}/CreateRoom", "Giorgica", token);
             else
                 WS.InitClient($"ws://localhost:{WS.port}/home", "MateiCorvin", roomNumberJoin);
-            WS.Close();
+            //Console.ReadKey();
+            while (true)
+            {
+                Task.Delay(100);
+            }
         }
 
     }

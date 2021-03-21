@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,8 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AppdataIO.cs" />
     <Compile Remove="IdGen.cs" />
     <Compile Remove="ServerProgram.cs" />
+    <Compile Remove="Settings.cs" />
   </ItemGroup>
 
 
