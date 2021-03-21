@@ -9,9 +9,8 @@
     <Compile Remove="DummyClientProgram.cs" />
   </ItemGroup>
 
-
   <ItemGroup>
-    <PackageReference Include="WebSocketSharpFork" Version="1.0.4" />
+    <PackageReference Include="websocketsharp.core" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
