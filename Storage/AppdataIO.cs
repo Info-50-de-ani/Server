@@ -5,7 +5,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace WebSocket___Server.Storage
+namespace PaintingClassServer.Storage
 {
     public static class AppdataIO
     {
@@ -13,7 +13,7 @@ namespace WebSocket___Server.Storage
 
         static AppdataIO()
         {
-            folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\PaintingClass";
+            folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\PaintingClassServer";
             Directory.CreateDirectory(folderPath);
         }
 

@@ -3,7 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Xml.Serialization;
 
-namespace WebSocket___Server.Storage
+namespace PaintingClassServer.Storage
 {
     [Serializable]
     public class Settings
