@@ -60,7 +60,10 @@ namespace PaintingClassServer.Services
                 room.Close();
         }
 
-
+        protected override void OnMessage(MessageEventArgs e)
+        {
+            Console.WriteLine(e.Data);
+        }
         //protected override void OnClose(WebSocketSharp.CloseEventArgs e)
         //{
         //    Sessions.Broadcast($"DIS {_index} {_name}");

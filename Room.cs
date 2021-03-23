@@ -48,7 +48,7 @@ namespace PaintingClassServer
             {
                 roomId = new Random(DateTime.Now.Second).Next(1, int.MaxValue);
             }
-            while (!openRooms.ContainsKey(roomId));
+            while (openRooms.ContainsKey(roomId));
 
             openRooms.Add(roomId, this);
             Console.WriteLine($"Created Room #{roomId}");
