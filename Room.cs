@@ -4,6 +4,7 @@ using System.Threading;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using PaintingClassServer.Services;
+using System.Text.Json;
 
 namespace PaintingClassServer
 {
@@ -28,20 +29,26 @@ namespace PaintingClassServer
         //lista Users
         public Dictionary<int, RoomUser> users = new Dictionary<int, RoomUser>();
         //useri logati
-        public int connectedUsers
+        public int connectedUsers;
+
+        public UserListMessage GetConnectedUsers()
         {
-            get
+            var idListe = new int[connectedUsers];
+            var nameListe = new string[connectedUsers];
+            int i = 0;
+            foreach (var x in users)
             {
-                int nr = 0;
-                foreach (var kvp in users)
+                if (x.Value.isConnected)
                 {
-                    if (kvp.Value.isConnected)
-                        nr++;
+                    idListe[i] = x.Value.clientId;
+                    nameListe[i] = x.Value.name;
+                    i++;
                 }
-                return nr;
             }
+
+            return new UserListMessage { idList = idListe,  nameList  =  nameListe };
         }
-        
+
         public Room()
         {
             do

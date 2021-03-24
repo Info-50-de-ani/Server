@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using WebSocketSharp.Server;
 using PaintingClassServer;
-using static PaintingClassServer.Room;
 using WebSocketSharp;
+using System.Text.Json;
+using static PaintingClassServer.Room;
+
 
 namespace PaintingClassServer.Services
 {
@@ -21,6 +23,7 @@ namespace PaintingClassServer.Services
         protected override void OnOpen()
         {
             int clientId = int.Parse(Context.QueryString["clientId"]);
+            room.connectedUsers++;
 
             if (room.users.TryGetValue(clientId,out RoomUser _ru))
             {
@@ -41,7 +44,10 @@ namespace PaintingClassServer.Services
                 room.users.Add(clientId,  ru);
                 
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
+
             }
+
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GetConnectedUsers())));
         }
 
         protected override void OnError(WebSocketSharp.ErrorEventArgs e)
@@ -53,11 +59,14 @@ namespace PaintingClassServer.Services
         protected override void OnClose(CloseEventArgs e)
         {
             Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) left.");
-
+            room.connectedUsers--;
+            
             // aratam ca conexiunea sa inchis si ca nu este conectat user-ul
             ru.rb = null;
-            if (room.connectedUsers == 1)
+            if (room.connectedUsers == 0)
                 room.Close();
+
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GetConnectedUsers())));
         }
 
         protected override void OnMessage(MessageEventArgs e)
