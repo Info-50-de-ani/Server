@@ -35,12 +35,14 @@ namespace PaintingClassServer.Services
             else
             {
                 //cream un nou RoomUser
-                ru = new RoomUser();
-
-                ru.clientId = clientId;
-                ru.name = Context.QueryString["name"];
-                ru.profToken = int.Parse(Context.QueryString["proftoken"]);
-                ru.rb = this;
+                ru = new RoomUser
+                {
+                    clientId = clientId,
+                    name = Context.QueryString["name"],
+                    profToken = int.Parse(Context.QueryString["proftoken"]),
+                    rb = this,
+                };
+                ru.isOwner = ru.profToken == room.ownerToken;
                 room.users.Add(clientId,  ru);
                 
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");

@@ -11,7 +11,7 @@ namespace PaintingClassServer.Services
             int token;
             if(int.TryParse(Context.QueryString["profToken"],out token) && Program.profTokens.Contains(token))
             {
-                var room = new Room();
+                var room = new Room(token);
                 Send(room.roomId.ToString());
             }
             else Sessions.CloseSession(ID);
