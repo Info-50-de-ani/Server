@@ -33,7 +33,12 @@ namespace PaintingClassServer
             //adaugam servicii
             server.AddWebSocketService<CreateRoom>("/createRoom");
 
-            Console.ReadKey(true);
+            char c=(char)0;
+            Console.WriteLine("Press Y to exit");
+            while (c!='y'&&c!='Y')
+            {
+                c = Console.ReadKey(true).KeyChar;
+            }
             server.Stop();
 
         }   

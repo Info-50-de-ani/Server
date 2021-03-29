@@ -1,16 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.Json;
 using System.Web;
 
-namespace PaintingClassServer
+namespace PaintingClassCommon
 {
+    /// <summary>
+    /// Aceasta clasa TREBUIE sa fie identica cu cealalta copie
+    /// </summary>
     public enum PacketType
     {
         none = 0,
         WhiteboardMessage = 1,
-        UserListMessage = 2
+        UserListMessage = 2,
+        ShareMessage = 3
     }
     [Serializable]
     public class Packet
@@ -49,5 +51,12 @@ namespace PaintingClassServer
     {
         public int[] idList { get; set; }
         public string[] nameList { get; set; }
+    }
+
+    [Serializable]
+    public class ShareRequestMessage
+    {
+        public int clientId;
+        public bool shared;
     }
 }

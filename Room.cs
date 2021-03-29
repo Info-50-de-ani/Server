@@ -5,6 +5,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using PaintingClassServer.Services;
 using System.Text.Json;
+using PaintingClassCommon;
 
 namespace PaintingClassServer
 {
@@ -16,6 +17,10 @@ namespace PaintingClassServer
             public string name;
             public int profToken = 0;
             public bool isOwner = false;
+            //todo: ce se intampla cand un user intra dupa ce cineva a pritit share?
+            public bool isShared = false;
+            //todo: daca primesti o comanda de stergere a tablei nu trb sa tii minte ce este inaintea comenzii
+            public List<WhiteboardMessage> whiteboardData;
 
             public RoomBehaviour rb;
 
@@ -24,11 +29,13 @@ namespace PaintingClassServer
         
         // folosim hash table sa stocam Roomrile
         public static Dictionary<int, Room> openRooms = new Dictionary<int, Room>();
-        
+
         //id-ul incaperii
-        public int roomId { set; get; }
+        public int roomId;
         //valoare profToken ce repezinta profId-ul profesorului ce a creat incaperea
-        public int ownerToken { get; set; }
+        public int ownerToken;
+        //can be null if onwer hasn't joined yet for some reason
+        public RoomUser ownerRU;
         //lista Users
         public Dictionary<int, RoomUser> users = new Dictionary<int, RoomUser>();
         //useri logati

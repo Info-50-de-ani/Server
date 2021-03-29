@@ -5,6 +5,7 @@ using WebSocketSharp.Server;
 using PaintingClassServer;
 using WebSocketSharp;
 using System.Text.Json;
+using PaintingClassCommon;
 using static PaintingClassServer.Room;
 
 
@@ -23,6 +24,7 @@ namespace PaintingClassServer.Services
         protected override void OnOpen()
         {
             int clientId = int.Parse(Context.QueryString["clientId"]);
+            //todo: ce se intampla cand reintri cu acelasi clientId dar nume diferit
             room.connectedUsers++;
 
             if (room.users.TryGetValue(clientId,out RoomUser _ru))
@@ -42,7 +44,11 @@ namespace PaintingClassServer.Services
                     profToken = int.Parse(Context.QueryString["proftoken"]),
                     rb = this,
                 };
-                ru.isOwner = ru.profToken == room.ownerToken;
+                if (ru.profToken == room.ownerToken)
+                {
+                    ru.isOwner = true;
+                    room.ownerRU = ru;
+                }
                 room.users.Add(clientId,  ru);
                 
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
@@ -73,44 +79,31 @@ namespace PaintingClassServer.Services
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            Console.WriteLine(e.Data);
-        }
-        //protected override void OnClose(WebSocketSharp.CloseEventArgs e)
-        //{
-        //    Sessions.Broadcast($"DIS {_index} {_name}");
-        //    //stergem roomul daca ultimu e host sau daca hostu da dis.
-        //    if (_room.Users.Count == 1 || _index == 0)
-        //    {
-        //        Program.server.RemoveWebSocketService(_room.URL);
-        //        _room.Users.Clear();
-        //        Room.openRooms.Remove(_room.roomId);
-        //        Console.WriteLine("Removed room");
-        //    }
-        //    else
-        //    {
-        //        //remove doar la user
-        //        _room.Users.Remove(_index);
-        //        Console.WriteLine("Removed user");
-        //    }
-        //}
+            Packet p = Packet.Unpack(e.Data);
 
-        //protected override void OnMessage(MessageEventArgs e)
-        //{
-        //    if (e.Data.Contains("SND"))
-        //    {
-        //        string[] data = e.Data.Split();
-        //        int idx = -1;
-        //        int.TryParse(data[1], out idx);
-        //        if (_room.Users.ContainsKey(idx))
-        //        {
-        //            string ans = "RCV ";
-        //            for (int i = 2; i < data.Length; i++)
-        //                ans += data[i] + " ";
-        //            _room.Users[idx].Send(ans);
-        //        }
-        //    }
-        //    else
-        //        Sessions.Broadcast($"BRC {_index} {e.Data}");
-        //}
+            switch (p.type)
+            {
+                case PacketType.WhiteboardMessage:
+                    WhiteboardMessage wm = JsonSerializer.Deserialize<WhiteboardMessage>(p.msg);
+                    //ne asiguram ca clintId-ul este acelasi
+                    if (wm.clientId != ru.clientId) break;
+                    ru.whiteboardData.Add(wm);
+                    break;
+                case PacketType.ShareMessage:
+                    ShareRequestMessage sm = JsonSerializer.Deserialize<ShareRequestMessage>(p.msg);
+                    //ne asiguram ca doar profu poate da share
+                    if (ru != room.ownerRU || ru.isShared == sm.shared) break;
+                    ru.isShared = sm.shared;
+                    Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name})" + (sm.shared?"started sharing":"stopped sharing"));
+
+                    //trimite schimbarea la toti clientii
+                    Sessions.Broadcast(Packet.Pack(PacketType.ShareMessage, JsonSerializer.Serialize(sm) ));
+
+
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }
