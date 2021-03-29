@@ -12,7 +12,7 @@ namespace PaintingClassCommon
         none = 0,
         WhiteboardMessage = 1,
         UserListMessage = 2,
-        ShareMessage = 3
+        ShareRequestMessage = 3
     }
     [Serializable]
     public class Packet
@@ -33,6 +33,7 @@ namespace PaintingClassCommon
         }
     }
 
+    //trimis de client si de server
     [Serializable]
     public class WhiteboardMessage
     {
@@ -46,17 +47,25 @@ namespace PaintingClassCommon
         public string content { get; set; }
     }
 
+    //trimis de server
     [Serializable]
     public class UserListMessage
     {
-        public int[] idList { get; set; }
-        public string[] nameList { get; set; }
+        [Serializable]
+        public class UserListItem
+        {
+            public int id { get; set; }
+            public string name {get;set;}
+            public bool isConnected { get; set; }
+            public bool isShared { get; set; }
+        }
+        public UserListItem[] list { get; set; }
     }
 
-    [Serializable]
+    //trims de client-ul profesorului
     public class ShareRequestMessage
     {
-        public int clientId;
-        public bool shared;
+        public int clientId { get; set; }
+        public bool isShared { get; set; }
     }
 }

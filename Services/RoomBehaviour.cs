@@ -55,7 +55,7 @@ namespace PaintingClassServer.Services
 
             }
 
-            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GetConnectedUsers())));
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
         }
 
         protected override void OnError(WebSocketSharp.ErrorEventArgs e)
@@ -74,7 +74,7 @@ namespace PaintingClassServer.Services
             if (room.connectedUsers == 0)
                 room.Close();
 
-            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GetConnectedUsers())));
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
         }
 
         protected override void OnMessage(MessageEventArgs e)
@@ -89,16 +89,16 @@ namespace PaintingClassServer.Services
                     if (wm.clientId != ru.clientId) break;
                     ru.whiteboardData.Add(wm);
                     break;
-                case PacketType.ShareMessage:
+
+                case PacketType.ShareRequestMessage:
                     ShareRequestMessage sm = JsonSerializer.Deserialize<ShareRequestMessage>(p.msg);
                     //ne asiguram ca doar profu poate da share
-                    if (ru != room.ownerRU || ru.isShared == sm.shared) break;
-                    ru.isShared = sm.shared;
-                    Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name})" + (sm.shared?"started sharing":"stopped sharing"));
+                    if (ru != room.ownerRU || ru.isShared == sm.isShared) break;
+                    ru.isShared = sm.isShared;
+                    Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name})" + (sm.isShared ? "started sharing":"stopped sharing"));
 
                     //trimite schimbarea la toti clientii
-                    Sessions.Broadcast(Packet.Pack(PacketType.ShareMessage, JsonSerializer.Serialize(sm) ));
-
+                    Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
 
                     break;
                 default:

@@ -41,22 +41,22 @@ namespace PaintingClassServer
         //useri logati
         public int connectedUsers;
 
-        public UserListMessage GetConnectedUsers()
+        public UserListMessage GenerateUserListMessage()
         {
-            var idListe = new int[connectedUsers];
-            var nameListe = new string[connectedUsers];
+            UserListMessage.UserListItem[] list = new UserListMessage.UserListItem[users.Count];
             int i = 0;
-            foreach (var x in users)
+            foreach (var user in users)
             {
-                if (x.Value.isConnected)
+                list[i] = new UserListMessage.UserListItem
                 {
-                    idListe[i] = x.Value.clientId;
-                    nameListe[i] = x.Value.name;
-                    i++;
-                }
+                    id = user.Key,
+                    name = user.Value.name,
+                    isConnected = user.Value.isConnected,
+                    isShared = user.Value.isShared
+                };
             }
 
-            return new UserListMessage { idList = idListe,  nameList  =  nameListe };
+            return new UserListMessage { list = list };
         }
 
         public Room(int _ownerToken)
