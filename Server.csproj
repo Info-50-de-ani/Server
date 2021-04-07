@@ -7,11 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DummyClientProgram.cs" />
+    <Compile Remove="DummyClientProgram.cs" />  
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="websocketsharp.core" Version="1.0.0" />
+    <PackageReference Include="MailKit" Version="2.11.1" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="5.0.0" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="WebSocketSharpFork" Version="1.0.4" />
   </ItemGroup>
 
 </Project>

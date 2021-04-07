@@ -54,6 +54,7 @@ namespace PaintingClassServer
                     isConnected = user.Value.isConnected,
                     isShared = user.Value.isShared
                 };
+                i++;
             }
 
             return new UserListMessage { list = list };

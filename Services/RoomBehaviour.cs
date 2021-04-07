@@ -43,18 +43,19 @@ namespace PaintingClassServer.Services
                     name = Context.QueryString["name"],
                     profToken = int.Parse(Context.QueryString["proftoken"]),
                     rb = this,
+                    whiteboardData = new List<WhiteboardMessage>()
                 };
                 if (ru.profToken == room.ownerToken)
-                {
+                {   
                     ru.isOwner = true;
                     room.ownerRU = ru;
                 }
                 room.users.Add(clientId,  ru);
+
                 
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
 
             }
-
             Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
         }
 
@@ -95,6 +96,7 @@ namespace PaintingClassServer.Services
                     //ne asiguram ca doar profu poate da share
                     if (ru != room.ownerRU || ru.isShared == sm.isShared) break;
                     ru.isShared = sm.isShared;
+                    
                     Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name})" + (sm.isShared ? "started sharing":"stopped sharing"));
 
                     //trimite schimbarea la toti clientii
