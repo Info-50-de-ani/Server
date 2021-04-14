@@ -26,7 +26,7 @@ namespace Server.Services.UserRegistration
 			msg.Subject = "Confirmare email";
 
 			string emailBody = emailHtml.Replace("NUME_UTILIZATOR", registerUserData.name);
-			// TODO Link Confirmare sa contina requestId
+			
 			emailBody = emailBody.Replace("LINK_CONFIRMARE", $"http://{Constants.publicIPAdress}:{Constants.httpPort}?email={registerUserData.email}&requestId={requestId}");
 
 			msg.Body = new TextPart("html")

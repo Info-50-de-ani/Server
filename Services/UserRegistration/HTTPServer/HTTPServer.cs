@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.IO;
+using PaintingClassServer;
 
 namespace Server.Services.UserRegistration.HTTPServer
 {
@@ -17,14 +18,35 @@ namespace Server.Services.UserRegistration.HTTPServer
 
 		public static void Init()
 		{
-			httpsv = new HttpServer(32221);
+			httpsv = new HttpServer(PaintingClassServer.Constants.httpPort);
 			httpsv.OnGet += Httpsv_OnGet;
 			httpsv.Start();
 		}
 
 		private static void Httpsv_OnGet(object sender, HttpRequestEventArgs e)
 		{
+			int token;
 			var req = e.Request;
+			// daca url contine /createRoom ...
+			if (req.RawUrl.Contains("/createRoom"))
+			{
+				// si tokenul este valid 
+				if (int.TryParse(req.QueryString["profToken"], out token))
+					if (Program.profTokens.Contains(token))
+					{
+						// cream un nou room 
+						var room = new Room(token);
+						byte[] roomId = Encoding.UTF8.GetBytes(room.roomId.ToString());
+						// trimitem tokenul inapoi la user
+						e.Response.ContentType = "text/html";
+						e.Response.ContentLength64 = roomId.Length;
+						e.Response.ContentEncoding = Encoding.UTF8;
+						e.Response.Close(roomId, true);
+						return;
+					}
+				return;
+			}
+
 			if (!string.IsNullOrEmpty(req.QueryString["email"]) && !string.IsNullOrEmpty(req.QueryString["requestId"]))
 			{
 				int requestId;
@@ -38,14 +60,13 @@ namespace Server.Services.UserRegistration.HTTPServer
 							GetPageFromFile(e, 200, "registersucces.html");
 							Console.WriteLine($"User {Register.pendingUsers[requestId]} succesfuly confirmed his email.");
 							Register.pendingUsers.Remove(requestId);
+							return;
 						}
 					}
 				}
 			}
-			else
-				GetPageFromFile(e, 400, "registerfail.html");
+			GetPageFromFile(e, 400, "registerfail.html");
 			return;
-				
 		}
 
 		public static void GetPageFromFile(HttpRequestEventArgs e, int statusCode, string htmlFileName)

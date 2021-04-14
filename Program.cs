@@ -69,7 +69,6 @@ namespace PaintingClassServer
             profTokens.Add(1234);
 
             //adaugam servicii
-            server.AddWebSocketService<CreateRoom>("/createRoom");
             server.AddWebSocketService<Server.Services.UserRegistration.Login>("/login");
             server.AddWebSocketService<Server.Services.UserRegistration.Register>("/register");
 
