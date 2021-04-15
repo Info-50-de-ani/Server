@@ -21,6 +21,11 @@ namespace PaintingClassServer.Services
             room = _room;
         }
 
+        public void SendMessage (string msg)
+        {
+            Send(msg);
+        }
+
         protected override void OnOpen()
         {
             int clientId = int.Parse(Context.QueryString["clientId"]);
@@ -42,6 +47,7 @@ namespace PaintingClassServer.Services
                     clientId = clientId,
                     name = Context.QueryString["name"],
                     profToken = int.Parse(Context.QueryString["proftoken"]),
+                    room = room,
                     rb = this,
                     whiteboardData = new List<WhiteboardMessage>()
                 };
@@ -62,7 +68,6 @@ namespace PaintingClassServer.Services
         {
             System.Console.WriteLine( $"Eroare in #{room.roomId}: {e.Message}");
         }
-
 
         protected override void OnClose(CloseEventArgs e)
         {
@@ -92,20 +97,21 @@ namespace PaintingClassServer.Services
                     //ne asiguram ca clintId-ul este acelasi
                     if (wm.clientId != ru.clientId) break;
                     ru.whiteboardData.Add(wm);
+                    ru.BroadcastWhiteboardUpdate(wm);
                     break;
 
                 case PacketType.ShareRequestMessage:
                     ShareRequestMessage sm = JsonSerializer.Deserialize<ShareRequestMessage>(p.msg);
+                    RoomUser roomUser = room.users[sm.clientId];
                     //ne asiguram ca doar profu poate da share
-                    if (ru != room.ownerRU || ru.isShared == sm.isShared) break;
-                    ru.isShared = sm.isShared;
-                    
-                    Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name})" + (sm.isShared ? "started sharing":"stopped sharing"));
+                    if (ru != room.ownerRU || roomUser.isShared == sm.isShared) break;
+                    roomUser.isShared = sm.isShared;
+                    Console.WriteLine($"#{room.roomId}: User {roomUser.clientId}({roomUser.name})" + (sm.isShared ? "started sharing":"stopped sharing"));
 
                     //trimite schimbarea la toti clientii
                     Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
-
                     break;
+
                 default:
                     break;
             }
