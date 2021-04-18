@@ -62,6 +62,8 @@ namespace PaintingClassServer.Services
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
 
             }
+
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
         }
 
         protected override void OnError(WebSocketSharp.ErrorEventArgs e)
@@ -82,12 +84,6 @@ namespace PaintingClassServer.Services
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            //pentru a evita exceptia operation not supported
-            if (e.Data == "0")
-			{
-                Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
-                return;
-            }
             Packet p = Packet.Unpack(e.Data);
 
             switch (p.type)
