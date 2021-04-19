@@ -26,6 +26,11 @@ namespace PaintingClassServer.Services
             Send(msg);
         }
 
+        public void BroadcastUserListMessage()
+        {
+            Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
+        }
+
         protected override void OnOpen()
         {
             int clientId = int.Parse(Context.QueryString["clientId"]);
@@ -57,11 +62,11 @@ namespace PaintingClassServer.Services
                     room.ownerRU = ru;
                 }
                 room.users.Add(clientId,  ru);
-
-                
+    
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
-
+                //trimite schimbarea la toti clientii
             }
+            BroadcastUserListMessage();
         }
 
         protected override void OnError(WebSocketSharp.ErrorEventArgs e)
@@ -78,16 +83,14 @@ namespace PaintingClassServer.Services
             ru.rb = null;
             if (room.connectedUsers == 0)
                 room.Close();
+
+            //trimite schimbarea la toti clientii
+            BroadcastUserListMessage();
         }
 
         protected override void OnMessage(MessageEventArgs e)
         {
             //pentru a evita exceptia operation not supported
-            if (e.Data == "0")
-			{
-                Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
-                return;
-            }
             Packet p = Packet.Unpack(e.Data);
 
             switch (p.type)
@@ -109,7 +112,7 @@ namespace PaintingClassServer.Services
                     Console.WriteLine($"#{room.roomId}: User {roomUser.clientId}({roomUser.name})" + (sm.isShared ? "started sharing":"stopped sharing"));
 
                     //trimite schimbarea la toti clientii
-                    Sessions.Broadcast(Packet.Pack(PacketType.UserListMessage, JsonSerializer.Serialize(room.GenerateUserListMessage())));
+                    BroadcastUserListMessage();
                     break;
 
                 default:
