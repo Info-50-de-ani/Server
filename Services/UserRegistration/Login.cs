@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Data.SqlClient;
 using PaintingClassServer;
+using Dapper;
+using System.Data;
 
 namespace Server.Services.UserRegistration
 { 
@@ -15,6 +17,8 @@ namespace Server.Services.UserRegistration
 		public string email { set; get; }
 		public string password { set; get; }
 	}
+
+
 
 	class Login : WebSocketBehavior
 	{
@@ -27,6 +31,15 @@ namespace Server.Services.UserRegistration
 
 		private static SHA512 sha3 = new SHA512Managed();
 
+		public class DBData
+		{
+			public string Email { get; set; }
+			public string Name { get; set; }
+			public byte[] HashedPass { get; set; }
+			public byte[] Salt { get; set; }
+			public int Token { get; set; }
+		}
+
 		protected override void OnMessage(MessageEventArgs e)
 		{
 		 	LoginUserData loginUserData = JsonSerializer.Deserialize<LoginUserData>(e.Data);
@@ -36,43 +49,35 @@ namespace Server.Services.UserRegistration
 				Send(((int)ServerResponse.Fail).ToString());
 				return;
 			}
-
-			Register.sqlCommand.CommandText = $"select * from Credentials where Email=\'{loginUserData.email}\'";
-
-			using (SqlDataReader reader = Register.sqlCommand.ExecuteReader())
+			DynamicParameters dynamicParameters = new DynamicParameters();
+			dynamicParameters.Add("@email", loginUserData.email, DbType.String);
+			var res = Register.dbConnection.Query<DBData>("select * from Credentials where Email=@email",dynamicParameters).AsList();
+			if (res.Count == 1)
 			{
-				if (reader.Read())
+				byte[] storedPass = res[0].HashedPass;
+
+				#region salt + pass
+				byte[] passwordBytes = Encoding.ASCII.GetBytes(loginUserData.password);
+
+				byte[] bsalt = res[0].Salt;
+
+				byte[] saltedPass = new byte[passwordBytes.Length + bsalt.Length];
+				bsalt.CopyTo(saltedPass, 0);
+				passwordBytes.CopyTo(saltedPass, bsalt.Length);
+				#endregion
+
+				string hashedPass = Encoding.ASCII.GetString(sha3.ComputeHash(saltedPass));
+
+				if(hashedPass == Encoding.ASCII.GetString(storedPass))
 				{
-					byte[] storedPass = (byte[])reader["HashedPass"];
-
-					#region salt + pass
-					byte[] passwordBytes = Encoding.ASCII.GetBytes(loginUserData.password);
-					
-					byte[] bsalt = (byte[])reader["Salt"];
-
-					byte[] saltedPass = new byte[passwordBytes.Length + bsalt.Length];
-					bsalt.CopyTo(saltedPass, 0);
-					passwordBytes.CopyTo(saltedPass, bsalt.Length);
-					#endregion
-
-					string hashedPass = Encoding.ASCII.GetString(sha3.ComputeHash(saltedPass));
-
-					if(hashedPass == Encoding.ASCII.GetString(storedPass))
-					{
-						//genToken
-						int token;
-						do
-							token = tokenGen.Next(1,int.MaxValue);
-						while (Program.profTokens.Contains(token));
-						Program.profTokens.Add(token);
-						Send($"{((int)ServerResponse.Succes)} {token}");
-						return;						
-					}
-					else
-					{
-						Send(((int)ServerResponse.NotRegistered).ToString());
-						return;
-					}
+					//genToken
+					int token;
+					do
+						token = tokenGen.Next(1,int.MaxValue);
+					while (Program.profTokens.Contains(token));
+					Program.profTokens.Add(token);
+					Send($"{((int)ServerResponse.Succes)} {token}");
+					return;						
 				}
 				else
 				{
@@ -80,6 +85,12 @@ namespace Server.Services.UserRegistration
 					return;
 				}
 			}
+			else
+			{
+				Send(((int)ServerResponse.NotRegistered).ToString());
+				return;
+			}
+			
 		}
 	}
 }

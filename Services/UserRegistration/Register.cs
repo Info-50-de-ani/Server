@@ -9,6 +9,8 @@ using System.Data;
 using System.Data.SqlClient;
 using MimeKit;
 using PaintingClassServer;
+using System.Data.SQLite;
+using Dapper;
 
 namespace Server.Services.UserRegistration
 {
@@ -44,9 +46,8 @@ namespace Server.Services.UserRegistration
 		private static Random random = new Random(DateTime.Now.Millisecond);
 		
 		private static string connectionString;
-		public static SqlCommand sqlCommand;
-		public static SqlConnection sqlConnection;
-		
+
+		public static IDbConnection dbConnection;
 		private static SHA512 sha3 = new SHA512Managed();
 		private static RNGCryptoServiceProvider rngCsp = new RNGCryptoServiceProvider();
 		
@@ -60,12 +61,11 @@ namespace Server.Services.UserRegistration
 		public static void InitDB()
 		{
 			// folosim pentru a ne conecta la o baza de date specifica
-			connectionString = ConfigurationManager.AppSettings["connectionString"];
+			connectionString = ConfigurationManager.ConnectionStrings["PaintingClassDB"].ConnectionString;
 
-			sqlConnection = new SqlConnection(connectionString);
-			sqlConnection.Open();
-			sqlCommand = new SqlCommand();
-			sqlCommand.Connection = sqlConnection;
+			dbConnection = new SQLiteConnection(connectionString);
+
+			dbConnection.Open();
 		}
 
 		/// <summary>
@@ -75,15 +75,14 @@ namespace Server.Services.UserRegistration
 		/// <returns></returns>
 		private static bool UserRegistered(RegisterUserData registerUserData)
 		{
-			sqlCommand.CommandText = $"select * from Credentials where Email=\'{registerUserData.email}\'";
-
-			using (SqlDataReader reader = sqlCommand.ExecuteReader())
-			{
-				if (reader.Read())
+			Console.WriteLine(dbConnection.State); 
+			DynamicParameters dynamicParameters = new DynamicParameters();
+			dynamicParameters.Add("@email", registerUserData.email, DbType.String, ParameterDirection.Input);
+			var res = dbConnection.Query("select Email from Credentials where Email=@email", dynamicParameters);
+			if (res.AsList<object>().Count != 0)
 					return true;
 				else
 					return false;
-			}
 		}
 
 		/// <summary>
@@ -122,15 +121,16 @@ namespace Server.Services.UserRegistration
 		/// <param name="pendingUserData"></param>
 		public static void SavePendingUser(PendingUserData pendingUserData)
 		{
-			sqlCommand.CommandText = $"insert into Credentials (Email,Name,HashedPass,Salt,Token) values (\'{pendingUserData.email}\',\'{pendingUserData.name}\',@hashedPass ,@salt,\'0\')";
 
-			sqlCommand.Parameters.Add("@hashedPass", SqlDbType.Binary);
-			sqlCommand.Parameters["@hashedPass"].Value = pendingUserData.hashedPassword;
-			sqlCommand.Parameters.Add("@salt", SqlDbType.Binary);
-			sqlCommand.Parameters["@salt"].Value = pendingUserData.salt;
+			DynamicParameters dynamicParameters = new DynamicParameters();
+			dynamicParameters.Add("@hashedPass",pendingUserData.hashedPassword, DbType.Binary);
+			dynamicParameters.Add("@salt",pendingUserData.salt, DbType.Binary);
+			dynamicParameters.Add("@name",pendingUserData.name, DbType.String);
+			dynamicParameters.Add("@email",pendingUserData.email,DbType.String);
+			dynamicParameters.Add("@token",0,DbType.Int32);
 
-			sqlCommand.ExecuteNonQuery();
-			
+			dbConnection.Execute($"insert into Credentials (Email,Name,HashedPass,Salt,Token) values (@email, @name ,@hashedPass ,@salt,@token)", dynamicParameters);
+
 			pendingUserData.socket?.Send(((int)ServerResponse.Succes).ToString());
 		}
 

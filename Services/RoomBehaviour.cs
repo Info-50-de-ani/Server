@@ -34,7 +34,6 @@ namespace PaintingClassServer.Services
         protected override void OnOpen()
         {
             int clientId = int.Parse(Context.QueryString["clientId"]);
-            //todo: ce se intampla cand reintri cu acelasi clientId dar nume diferit
             room.connectedUsers++;
 
             if (room.users.TryGetValue(clientId,out RoomUser _ru))
@@ -64,8 +63,8 @@ namespace PaintingClassServer.Services
                 room.users.Add(clientId,  ru);
     
                 Console.WriteLine($"#{room.roomId}: User {ru.clientId}({ru.name}) joined.");
-                //trimite schimbarea la toti clientii
             }
+            //trimite schimbarea la toti clientii
             BroadcastUserListMessage();
         }
 
@@ -90,7 +89,6 @@ namespace PaintingClassServer.Services
 
         protected override void OnMessage(MessageEventArgs e)
         {
-            //pentru a evita exceptia operation not supported
             Packet p = Packet.Unpack(e.Data);
 
             switch (p.type)
