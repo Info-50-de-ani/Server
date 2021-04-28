@@ -121,7 +121,10 @@ namespace PaintingClassServer.Services
             // aratam ca conexiunea sa inchis si ca nu este conectat user-ul
             ru.rb = null;
             if (room.connectedUsers == 0)
+            {
                 room.Close();
+                return;
+            }
 
             //trimite schimbarea la toti clientii
             BroadcastUserListMessage();
