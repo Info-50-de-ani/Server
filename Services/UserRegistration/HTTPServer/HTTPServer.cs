@@ -9,6 +9,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.IO;
 using PaintingClassServer;
+using PaintingClassServer.Services;
 
 namespace Server.Services.UserRegistration.HTTPServer
 {
