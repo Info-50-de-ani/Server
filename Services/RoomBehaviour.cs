@@ -98,6 +98,7 @@ namespace PaintingClassServer.Services
                 if (ru.profToken == room.ownerToken)
                 {   
                     ru.isOwner = true;
+                    ru.isShared = true;
                     room.ownerRU = ru;
                 }
                 room.users.Add(clientId,  ru);
