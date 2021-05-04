@@ -55,7 +55,7 @@ namespace PaintingClassServer
             
             // pornim servurl http pt inregistrare 
             HTTPServer.Init();
-
+            Console.WriteLine($"IP Address: {Constants.publicIPAdress}");
 
             // folosim constructor cu port 
             // deoarece au intervenit probleme cu ip-ul cand am testat pe net

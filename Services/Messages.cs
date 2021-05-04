@@ -16,8 +16,6 @@ namespace PaintingClassCommon
         WBItemMessage = 10,
         WBCollectionMessage = 11,
         SyncRequestMessage = 12,
-
-        WhiteboardMessage = 999 // obsolete
     }
 
     /// <summary>
@@ -82,7 +80,7 @@ namespace PaintingClassCommon
         public enum ContentType
         {
             drawing,
-            userControl,
+            control,
             clearAll
         }
         public enum Operation
@@ -120,20 +118,4 @@ namespace PaintingClassCommon
     {
         public int clientID { get; set; }
     }
-
-    //trimis de client si de server
-    [Serializable]
-    [Obsolete("Vechi", true)]
-    public class WhiteboardMessage
-    {
-        public enum ContentType
-        {
-            Drawing, Action
-        };
-
-        public int clientId { get; set; }
-        public ContentType type { get; set; }
-        public string content { get; set; }
-    }
-
 }
