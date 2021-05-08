@@ -13,9 +13,13 @@ namespace PaintingClassCommon
         UserListMessage = 1,
         ShareRequestMessage = 2,
 
+        KickRequestMessage = 3,
+        KickAlertMessage = 4,
+
         WBItemMessage = 10,
         WBCollectionMessage = 11,
         SyncRequestMessage = 12,
+
     }
 
     /// <summary>
@@ -40,6 +44,8 @@ namespace PaintingClassCommon
         }
     }
 
+
+
     /// <summary>
     /// Contine date despre toti utilizatorii, se trimite la toti cand o schimbare se petrece
     /// Trimis de server
@@ -58,7 +64,6 @@ namespace PaintingClassCommon
         }
         public UserListItem[] list { get; set; }
     }
-
     /// <summary>
     /// Cere sa dai share la un user
     /// Trims de client-ul profesorului
@@ -69,6 +74,27 @@ namespace PaintingClassCommon
         public int clientId { get; set; }
         public bool isShared { get; set; }
     }
+
+
+
+    /// <summary>
+    /// Cere sa dai kick la un user
+    /// </summary>
+    [Serializable]
+    public class KickRequestMessage
+    {
+        public int clientId { get; set; }
+    }
+    /// <summary>
+    /// Pa pa
+    /// </summary>
+    [Serializable]
+    public class KickAlertMessage
+    { 
+        public string message { get; set; }
+    }
+
+    
 
     /// <summary>
     /// Poate transmite un drawing, userControl sau comanda de a goli tabla
@@ -97,7 +123,6 @@ namespace PaintingClassCommon
         public Operation op { get; set; }
         public string content { get; set; }
     }
-
     /// <summary>
     /// O colectie de iteme de tabla
     /// Daca partial este false atunci mesajul contine *toata* si ce exista deja trebuie golit
@@ -109,7 +134,6 @@ namespace PaintingClassCommon
         public bool partial { get; set; } = true;
         public WBItemMessage[] items { get; set; }
     }
-
     /// <summary>
     /// Cere sa retrimita tabla folosind un WBCollectionMessage
     /// </summary>
