@@ -43,7 +43,7 @@ namespace Server.Services.UserRegistration
 		protected override void OnMessage(MessageEventArgs e)
 		{
 		 	LoginUserData loginUserData = JsonSerializer.Deserialize<LoginUserData>(e.Data);
-
+				
 			if(loginUserData == null)
 			{
 				Send(((int)ServerResponse.Fail).ToString());
@@ -76,7 +76,7 @@ namespace Server.Services.UserRegistration
 						token = tokenGen.Next(1,int.MaxValue);
 					while (Program.profTokens.Contains(token));
 					Program.profTokens.Add(token);
-					Send($"{((int)ServerResponse.Succes)} {token}");
+					Send($"{((int)ServerResponse.Succes)} {token} {res[0].Name}");
 					return;						
 				}
 				else
