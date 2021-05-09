@@ -6,7 +6,7 @@ using PaintingClassServer;
 using WebSocketSharp;
 using System.Text.Json;
 using PaintingClassCommon;
-
+using System.Threading.Tasks;
 
 namespace PaintingClassServer.Services
 {
@@ -163,7 +163,20 @@ namespace PaintingClassServer.Services
 					    }
                         break;
                     }
-           
+
+                case PacketType.KickRequestMessage:
+                    {
+                        var krm = JsonSerializer.Deserialize<KickRequestMessage>(p.msg);
+                        if (!ru.isOwner) return;
+                        RoomBehaviour rb = room.users[krm.clientId].rb;
+                        if (rb != null && rb.State != WebSocketState.Closed)
+                        {
+                            rb.SendMessage(Packet.Pack(PacketType.KickAlertMessage, JsonSerializer.Serialize(new KickAlertMessage { message = "Ai fost dat afara!" })));
+                            rb.Sessions.CloseSession(rb.ID);
+                        }
+                        break;
+                    }
+
                 case PacketType.SyncRequestMessage:
                     {
                         var srmsg = JsonSerializer.Deserialize<SyncRequestMessage>(p.msg);
