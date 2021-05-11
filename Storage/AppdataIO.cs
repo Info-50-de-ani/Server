@@ -24,8 +24,11 @@ namespace PaintingClassServer.Storage
 
             if (File.Exists(filePath) == true)
             {
-                using FileStream fs = File.OpenRead(filePath);
-                return (T)serializer.Deserialize(fs);
+                using(FileStream fs = File.OpenRead(filePath))
+                    {
+
+                    return (T)serializer.Deserialize(fs);
+                }
             }
             else
                 return null;
@@ -37,8 +40,11 @@ namespace PaintingClassServer.Storage
             XmlSerializer serializer = new XmlSerializer(typeof(T),extraTypes);
 
             File.Delete(filePath);
-            using FileStream fs = File.OpenWrite(filePath);
-            serializer.Serialize(fs, obj);
+            using (FileStream fs = File.OpenWrite(filePath))
+			{
+                serializer.Serialize(fs, obj);
+
+			}
         }
     }
 }

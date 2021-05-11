@@ -15,7 +15,7 @@ namespace PaintingClassServer.Services
         public bool isShared = false;
 
         public int wbItemIndex=0;//todo:could be replaced with whiteboardData.Count, maybe
-        public List<WBItemMessage> whiteboardData = new();
+        public List<WBItemMessage> whiteboardData = new List<WBItemMessage>();
 
         public Room room; // room-ul in care este user-ul
         public RoomBehaviour rb; // poate fi null daca user-ul nu este conectat

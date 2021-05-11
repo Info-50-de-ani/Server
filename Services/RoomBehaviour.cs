@@ -180,7 +180,7 @@ namespace PaintingClassServer.Services
                 case PacketType.SyncRequestMessage:
                     {
                         var srmsg = JsonSerializer.Deserialize<SyncRequestMessage>(p.msg);
-                        WBCollectionMessage coll = new()
+                        WBCollectionMessage coll = new WBCollectionMessage()
                         {
                             clientID = srmsg.clientID,
                             partial = false,
