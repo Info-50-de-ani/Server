@@ -29,5 +29,11 @@
     <PackageReference Include="WebSocketSharpFork" Version="1.0.4" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="SmptCredentials.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 
 </Project>

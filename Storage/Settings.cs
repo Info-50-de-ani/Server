@@ -27,31 +27,6 @@ namespace PaintingClassServer.Storage
 		//ne asiguram ca nu salvam cand deserializer-ul seteaza variabilele
 		bool deserializationFinished;
 
-		private string _smptPassword;
-		private string _smptEmail;
-		public string smptEmail 
-		{
-			get => _smptEmail;
-			set
-			{
-				_smptEmail = value;
-				if(deserializationFinished)
-					Save();
-			}
-				
-		}
-
-		public string smptPassword 
-		{
-			get => _smptPassword;
-			set
-			{
-				_smptPassword = value;
-				if (deserializationFinished)
-					Save();
-			}
-		}
-
 		void Save()
 		{
 			if (deserializationFinished)

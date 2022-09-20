@@ -12,7 +12,7 @@ namespace Server.Services.UserRegistration
 		{
 			smtpClient = new SmtpClient();
 			smtpClient.Connect("smtp.gmail.com", 465, true);
-			smtpClient.Authenticate("booldogsromania@gmail.com", "ciocolataTrebuieSaFieInterzisa");
+			smtpClient.Authenticate(Constants.registerSenderEmail, Constants.registerSenderPassword);
 		}
 
 		private static SmtpClient smtpClient;
@@ -35,5 +35,7 @@ namespace Server.Services.UserRegistration
 			};
 			smtpClient.Send(msg);
 		}
+
+
 	}
 }
